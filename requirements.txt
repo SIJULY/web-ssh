@@ -3,3 +3,7 @@ flask-socketio
 paramiko
 eventlet
 gunicorn
+flask-sqlalchemy
+flask-login
+werkzeug
+cryptography
