@@ -18,6 +18,8 @@ app = Flask(__name__)
 # 为 Flask session 和加密设置一个强密钥。
 # 在生产中，这应该从环境变量中读取！
 app.config['SECRET_KEY'] = 'a-very-complex-and-long-random-secret-key-for-panel'
+# (新增) 添加一个专用的、格式正确的 Fernet 加密密钥
+app.config['FERNET_KEY'] = 'vSgQk7R3qf0A2W_uB5p-j_lF8D9s1K_c7Z_eX6tG4yM='
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///servers.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -62,10 +64,9 @@ class Server(db.Model):
 
 # --- 3. 加密工具 ---
 # (这是一个简化的实现。理想情况下，密钥管理应该更复杂)
-# 使用 SECRET_KEY 的一部分作为加密密钥 (确保它足够长)
-# **警告**: 如果 SECRET_KEY 改变, 所有加密数据将无法解密！
-# 我们需要一个 32 字节的 key
-key = app.config['SECRET_KEY'][:32].encode('utf-8').ljust(32, b'\0')
+# **警告**: 如果 FERNET_KEY 改变, 所有加密数据将无法解密！
+# (已修正) 我们使用专用的 FERNET_KEY
+key = app.config['FERNET_KEY'].encode('utf-8')
 cipher_suite = Fernet(key)
 
 def encrypt_data(data):
@@ -115,7 +116,7 @@ def logout():
 def register():
     # 在生产中，您可能希望禁用此路由，或只允许第一个用户注册
     if User.query.count() > 0:
-        flash('注册已禁用。', 'info')
+        flash('注册已禁用。只允许创建第一个管理员账户。', 'info')
         return redirect(url_for('login'))
 
     if request.method == 'POST':
@@ -139,6 +140,7 @@ def register():
 # --- 5. 服务器管理 (CRUD) 路由 ---
 
 @app.route('/')
+@app.route('/dashboard')
 @login_required
 def dashboard():
     """
@@ -247,7 +249,7 @@ def terminal(server_id):
         
     # 我们不再使用 Flask session 传递凭据
     # 我们只渲染页面
-    return render_template('terminal.html', server_name=server.name)
+    return render_template('terminal.html', server_name=server.name, server_id=server.id)
 
 # --- 7. 全新的 Socket.IO 逻辑 ---
 
@@ -318,6 +320,7 @@ def init_terminal(data):
         return
 
     # 检查用户是否已登录 (通过 Flask-Login 的 current_user)
+    # 【重要】SocketIO 没有 Flask 的 session 上下文，我们必须手动处理
     if not current_user.is_authenticated:
         emit('ssh_output', {'data': 'Error: Authentication required.\r\n'})
         disconnect(sid)
@@ -416,4 +419,5 @@ if __name__ == '__main__':
         init_db()
         
     print("Starting Flask-SocketIO server on http://127.0.0.1:5000")
+    # allow_unsafe_werkzeug=True 是为了兼容新版 Werkzeug 和 eventlet
     socketio.run(app, host='127.0.0.1', port=5000, debug=True, allow_unsafe_werkzeug=True)
