@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block title %}终端 - 正在连接 {{ server_name | e }}{% endblock %}
+
+<style>
+    /* 覆盖 layout.html 的一些样式，让终端全屏化 */
+    body {
+        padding: 0;
+        /* 移除 layout.html 的内边距 */
+    }
+    .container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        height: calc(100vh - 58px); /* 减去导航栏高度 */
+    }
+    .navbar {
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+    
+    /* 终端容器 */
+    #terminal {
+        width: 100%;
+        height: 100%; /* 占满 .container 的所有高度 */
+        background-color: #000;
+    }
+    
+    /* 隐藏 flash 消息，因为它们会占用空间 */
+    .flashes {
+        display: none;
+    }
+</style>
+
+
+{% block content %}
+    <div id="terminal"></div>
+
+    <script>
+        // 将 Jinja2 变量转换为 JavaScript 全局变量
+        const SERVER_ID = {{ server_id | tojson }};
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.2/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
