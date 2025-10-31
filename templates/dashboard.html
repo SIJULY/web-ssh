@@ -6,7 +6,7 @@
     /* 服务器列表样式 */
     .server-list {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 20px;
     }
     .server-card {
@@ -14,32 +14,47 @@
         border-radius: 8px;
         padding: 20px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    
+    /* 【新】卡片头部：使用 flex 布局 */
+    .server-card-header {
         display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        justify-content: space-between; /* 关键：名称在左，按钮在右 */
+        align-items: center;
+        margin-bottom: 10px; /* 头部和下方 p 标签的间距 */
     }
-    .server-card h3 {
-        margin-top: 0;
+    .server-card-header h3 {
+        margin: 0;
         color: #fff;
+        word-break: break-all; /* 如果名称太长则换行 */
     }
+    
+    /* 【已修正】服务器信息 (p 标签) */
     .server-card p {
         color: #aaa;
         font-family: monospace;
         margin: 5px 0;
         word-break: break-all;
     }
+
+    /* 【已修正】按钮组容器 */
     .server-actions {
-        margin-top: 15px;
+        margin-top: 0; /* 不再需要上边距 */
         display: flex;
         gap: 10px;
+        align-items: center;
+        flex-shrink: 0; /* 防止按钮组被挤压换行 */
+        margin-left: 15px; /* 在名称和按钮之间留出空间 */
     }
-    /* 缩小按钮尺寸以适应卡片 */
+    
+    /* 【已修正】按钮通用样式 */
     .btn-small {
         padding: 8px 12px;
         font-size: 14px;
-        flex: 1; /* 让按钮平分空间 */
+        /* 移除 flex: 1 */
         text-align: center;
         text-decoration: none;
+        white-space: nowrap; /* 防止按钮文字换行 */
     }
     .btn-edit {
         background-color: #ffc107;
@@ -48,13 +63,15 @@
     .btn-edit:hover {
         background-color: #d39e00;
     }
+    
+    /* 【已修正】删除按钮的表单 */
     .btn-delete-form {
-        flex: 1;
-        margin: 0;
+        margin: 0; /* 移除所有外边距 */
     }
+    /* 【已修正】删除按钮本身 */
     .btn-delete {
-        width: 100%;
-        margin: 0;
+        /* 移除 width: 100% */
+        /* 样式将由 .btn, .btn-small, .btn-danger 共同提供 */
     }
 
     /* 当列表为空时的提示 */
@@ -64,12 +81,8 @@
         background-color: #2a2a2a;
         border-radius: 8px;
     }
-    .empty-state h3 {
-        color: #fff;
-    }
-    .empty-state p {
-        color: #aaa;
-    }
+    .empty-state h3 { color: #fff; }
+    .empty-state p { color: #aaa; }
     .empty-state .btn {
         display: inline-block;
         width: auto;
@@ -86,25 +99,27 @@
         <div class="server-list">
             {% for server in servers %}
             <div class="server-card">
-                <div>
+                <div class="server-card-header">
                     <h3>{{ server.name }}</h3>
-                    <p>{{ server.username }}@{{ server.host }}:{{ server.port }}</p>
-                </div>
-                <div class="server-actions">
-                    <a href="{{ url_for('terminal', server_id=server.id) }}" 
-                       target="_blank" 
-                       class="btn btn-small">连接</a>
                     
-                    <a href="{{ url_for('edit_server', server_id=server.id) }}" 
-                       class="btn btn-small btn-edit">编辑</a>
-                    
-                    <form action="{{ url_for('delete_server', server_id=server.id) }}" 
-                          method="POST" 
-                          class="btn-delete-form"
-                          onsubmit="return confirm('您确定要删除 {{ server.name | e }} 吗？');">
-                        <button type="submit" class="btn btn-small btn-danger btn-delete">删除</button>
-                    </form>
+                    <div class="server-actions">
+                        <a href="{{ url_for('terminal', server_id=server.id) }}" 
+                           target="_blank" 
+                           class="btn btn-small">连接</a>
+                        
+                        <a href="{{ url_for('edit_server', server_id=server.id) }}" 
+                           class="btn btn-small btn-edit">编辑</a>
+                        
+                        <form action="{{ url_for('delete_server', server_id=server.id) }}" 
+                              method="POST" 
+                              class="btn-delete-form"
+                              onsubmit="return confirm('您确定要删除 {{ server.name | e }} 吗？');">
+                            <button type="submit" class="btn btn-small btn-danger btn-delete">删除</button>
+                        </form>
+                    </div>
                 </div>
+                
+                <p>{{ server.username }}@{{ server.host }}:{{ server.port }}</p>
             </div>
             {% endfor %}
         </div>
