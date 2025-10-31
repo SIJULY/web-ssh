@@ -78,9 +78,9 @@ python3 -m venv venv
 echo "--- 正在激活 venv 并安装 requirements.txt... ---"
 ./venv/bin/pip install -r requirements.txt
 
-# --- 5. 创建 Systemd 服务 (使用 0.0.0.0) ---
-# (与之前相同)
+# --- 5. 创建 Systemd 服务 (已修正) ---
 echo "--- 正在创建 systemd 服务 (web-ssh.service)... ---"
+# (修正: 必须绑定到 0.0.0.0 才能让 Docker 容器访问)
 cat > /etc/systemd/system/web-ssh.service << EOF
 [Unit]
 Description=Gunicorn instance for Web-SSH
@@ -89,6 +89,9 @@ After=network.target
 [Service]
 User=root
 WorkingDirectory=$APP_DIR
+# (添加一个 ExecStartPre 来自动初始化/迁移数据库)
+ExecStartPre=$APP_DIR/venv/bin/python -c "from app import app, db; app.app_context().push(); db.create_all()"
+# (使用 Gunicorn 启动)
 ExecStart=$APP_DIR/venv/bin/gunicorn -w 1 -k eventlet -b 0.0.0.0:$APP_PORT app:app
 Restart=always
 RestartSec=3
